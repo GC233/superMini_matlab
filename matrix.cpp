@@ -5,6 +5,11 @@ using namespace std;
 class Matrix
 {
 public:
+    Matrix (Matrix&& c) noexcept :row(c.row), col(c.col), m(c.m)
+    {
+        /* 带右值引用的拷贝构造，如果等式右端是一个函数返回值，就触发此拷贝构造 */
+        c.m = nullptr;
+    }
     Matrix(const Matrix& c)
     {
         row = c.row;
@@ -52,6 +57,7 @@ public:
     }
     ~Matrix()
     {
+        if (m == nullptr) return;
         for (int i = 0; i < row; i++)
         {
             delete[](m[i]);
@@ -71,7 +77,7 @@ public:
             cout << endl;
         }
     }
-    Matrix& operator+(Matrix& an_Matrix)
+    Matrix& operator+(const Matrix& an_Matrix)
     {
         if ((this->row == an_Matrix.row) && (this->col == an_Matrix.col))
         {
@@ -90,7 +96,7 @@ public:
         }
         return (*this);
     }
-    Matrix& operator-(Matrix& an_Matrix)
+    Matrix& operator-(const Matrix& an_Matrix)
     {
         if ((this->row == an_Matrix.row) && (this->col == an_Matrix.col))
         {
@@ -109,7 +115,7 @@ public:
         }
         return (*this);
     }
-    Matrix operator*(Matrix& an_Matrix)
+    Matrix operator*(const Matrix& an_Matrix)
     {
         //注意：不能返回局部变量的引用，因为变量在函数返回时会被释放
         Matrix result(this->row, an_Matrix.col);
@@ -132,6 +138,35 @@ public:
             //应抛出异常
         }
         return result;
+    }
+    Matrix& operator=(const Matrix& c)
+    {
+        /* 重载=为深拷贝 */
+        row = c.row;
+        col = c.col;
+        m = new double* [row];
+        for (int i = 0; i < row; i++)
+        {
+            m[i] = new double[col];
+            for (int j = 0; j < col; j++)
+            {
+                m[i][j] = c.m[i][j];
+            }
+        }
+        return (*this);
+    }
+    Matrix& operator=(Matrix&& c) noexcept
+    { 
+        if (this == &c) return (*this);
+        for (int i = 0; i < row; i++)
+        {
+            delete[](m[i]); //释放原先的内存
+        }
+        row = c.row;
+        col = c.col;
+        m = c.m;
+        c.m = nullptr;
+        return (*this);
     }
     double* operator[](int row) const
     {
@@ -178,14 +213,14 @@ public:
             }
             junior_transform_swap_Row(i, max_index);
             //cout << "r" << i << "<->" << "r" << max_index << endl;
-            print_Matrix();
+            //print_Matrix();
             //执行消去
             for (int index = i + 1; index < row; index++)
             {
                 double x = m[index][i] / m[i][i];
                 junior_transform_add_Row(i, index, -x);
                 //cout << "r" << index << ":=" << "r" << index << "-" << x << "*" << "r" << i << endl;
-                print_Matrix();
+                //print_Matrix();
             }
         }
         //向上消去为单位阵
@@ -228,15 +263,15 @@ void ref_Matrix(Matrix& m)
             if (abs(m[max_index][i]) < abs(m[index][i])) max_index = index;          
         }
         m.junior_transform_swap_Row(i, max_index);
-        cout << "r" << i << "<->" << "r" << max_index << endl;
-        m.print_Matrix();
+        //cout << "r" << i << "<->" << "r" << max_index << endl;
+        //m.print_Matrix();
         //执行消去
         for (int index = i + 1; index < row; index++)
         {
             double x = m[index][i] / m[i][i];
             m.junior_transform_add_Row(i, index, -x);
-            cout << "r" << index << ":=" << "r" << index << "-" << x << "*" << "r" << i << endl;
-            m.print_Matrix();
+            //cout << "r" << index << ":=" << "r" << index << "-" << x << "*" << "r" << i << endl;
+            //m.print_Matrix();
         }
     }
     //向上消去为单位阵
@@ -248,11 +283,11 @@ void ref_Matrix(Matrix& m)
         {
             double x = m[index][i] / m[i][i];
             m.junior_transform_add_Row(i, index, -x);
-            m.print_Matrix();
+            //m.print_Matrix();
         }
     }
     for (int i = row - 1; i >= 0; i--) { m.junior_transform_mul_Row(i, (1/m[i][i])); }
-    m.print_Matrix();
+    //m.print_Matrix();
 }
 class Matrix_E :public Matrix
 {
